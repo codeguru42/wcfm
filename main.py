@@ -21,8 +21,19 @@ def submit(content: str, github_copilot_url: str, api_key: str):
         model="claude-3-5-sonnet-20241022",
         max_tokens=1000,
         temperature=0,
-        system="You are a export software engineer. Respond only with python code.",
-        messages=[{"role": "user", "content": [{"type": "text", "text": content}]}],
+        system="You are a export software engineer. Respond only with code without markdown formatting.",
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "Write python code to solve the following problem",
+                    }
+                ],
+            },
+            {"role": "user", "content": [{"type": "text", "text": content}]},
+        ],
     )
     return message
 
