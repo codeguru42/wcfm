@@ -4,7 +4,7 @@ import requests
 app = typer.Typer()
 
 @app.command()
-def fetch_url(url: str):
+def main(url: str):
     """
     Fetches the content of the given URL and prints the status code.
     """
