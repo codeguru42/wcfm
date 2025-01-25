@@ -19,7 +19,7 @@ def submit(content: str, api_key: str):
         model="claude-3-5-sonnet-20241022",
         max_tokens=1000,
         temperature=0,
-        system="You are a export software engineer. Respond only with code without markdown formatting.",
+        system="You are an expert software engineer. Respond only with code without markdown formatting.",
         messages=[
             {
                 "role": "user",
