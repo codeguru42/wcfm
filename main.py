@@ -4,8 +4,6 @@ import httpx
 
 app = typer.Typer()
 
-DEFAULT_GITHUB_COPILOT_URL = "https://api.github.com/copilot/submit"
-
 
 def fetch_url(url: str) -> str:
     response = httpx.get(url)
@@ -15,7 +13,7 @@ def fetch_url(url: str) -> str:
     return content
 
 
-def submit(content: str, github_copilot_url: str, api_key: str):
+def submit(content: str, api_key: str):
     client = anthropic.Anthropic(api_key=api_key)
     message = client.messages.create(
         model="claude-3-5-sonnet-20241022",
@@ -44,11 +42,9 @@ def save(filename, result):
 
 
 @app.command()
-def main(
-    url: str, llm_url: str = DEFAULT_GITHUB_COPILOT_URL, api_key: str = typer.Argument()
-):
+def main(url: str, api_key: str = typer.Argument()):
     content = fetch_url(url)
-    result = submit(content, llm_url, api_key)
+    result = submit(content, api_key)
     save("aoc.py", result)
 
 
