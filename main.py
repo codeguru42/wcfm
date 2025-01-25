@@ -38,13 +38,18 @@ def submit(content: str, github_copilot_url: str, api_key: str):
     return message
 
 
+def save(filename, result):
+    with open(filename, "w") as f:
+        f.write(result.content[0].text)
+
+
 @app.command()
 def main(
     url: str, llm_url: str = DEFAULT_GITHUB_COPILOT_URL, api_key: str = typer.Argument()
 ):
     content = fetch_url(url)
     result = submit(content, llm_url, api_key)
-    print(result)
+    save("aoc.py", result)
 
 
 if __name__ == "__main__":
