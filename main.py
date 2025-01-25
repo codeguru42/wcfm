@@ -1,12 +1,12 @@
 import typer
-import requests
+import httpx
 
 app = typer.Typer()
 
 
 @app.command()
 def main(url: str):
-    response = requests.get(url)
+    response = httpx.get(url)
     typer.echo(f"Status Code: {response.status_code}")
     typer.echo(f"Content: {response.text[:200]}...")
 
