@@ -1,3 +1,5 @@
+import subprocess
+
 import anthropic
 import typer
 import httpx
@@ -41,11 +43,16 @@ def save(filename, result):
         f.write(result.content[0].text)
 
 
+def execute(python_path, script, *args):
+    subprocess.run([python_path, script, *args])
+
+
 @app.command()
-def main(url: str, api_key: str = typer.Argument()):
+def main(url: str, api_key: str, python_path: str):
     content = fetch_url(url)
     result = submit(content, api_key)
     save("aoc.py", result)
+    execute(python_path, "aoc.py")
 
 
 if __name__ == "__main__":
