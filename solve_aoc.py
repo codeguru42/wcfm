@@ -50,7 +50,8 @@ def save(script_path: Path, result: Message):
     script_path.parent.mkdir(parents=True, exist_ok=True)
     with open(script_path, "w") as f:
         f.write(result.content[0].text)
-        
+
+
 def download_input(problem_url: str, input_path: Path, session_token: str):
     input_url = furl(problem_url) / "input"
     response = httpx.get(input_url.url, cookies={"session": session_token})
@@ -60,8 +61,11 @@ def download_input(problem_url: str, input_path: Path, session_token: str):
 
 
 def execute(python_path: Path, script_path: Path, *args) -> str:
-    result = subprocess.run([python_path, script_path, *args], capture_output=True, text=True)
+    result = subprocess.run(
+        [python_path, script_path, *args], capture_output=True, text=True
+    )
     return result.stdout
+
 
 def parse_url(url: str) -> tuple[int, int]:
     parsed_url = furl(url)
@@ -69,14 +73,25 @@ def parse_url(url: str) -> tuple[int, int]:
     day = parsed_url.path.segments[2]
     return int(year), int(day)
 
+
 def submit_solution(aoc_url: str, aoc_session_token: str, solution: str, level: int):
     parsed_url = furl(aoc_url)
     answer_url = parsed_url / "answer"
-    return httpx.post(answer_url.url, data={"level": level, "answer": solution}, cookies={"session": aoc_session_token})
+    return httpx.post(
+        answer_url.url,
+        data={"level": level, "answer": solution},
+        cookies={"session": aoc_session_token},
+    )
 
 
 @app.command()
-def main(url: str, api_key: str, python_path: Path, aoc_project_path: Path, aoc_session_token: str):
+def main(
+    url: str,
+    api_key: str,
+    python_path: Path,
+    aoc_project_path: Path,
+    aoc_session_token: str,
+):
     content = fetch_problem(url)
     result = submit(content, api_key)
     year, day = parse_url(url)
