@@ -55,7 +55,9 @@ def save(script_path: Path, result: Message):
 
 def download_input(problem_url: str, input_path: Path, session_token: str):
     input_url = furl(problem_url) / "input"
-    typer.echo(f"Downloading input from {input_url} and saving to {input_path} ...", nl=False)
+    typer.echo(
+        f"Downloading input from {input_url} and saving to {input_path} ...", nl=False
+    )
     response = httpx.get(input_url.url, cookies={"session": session_token})
     typer.echo(response.status_code)
     input_path.parent.mkdir(parents=True, exist_ok=True)
