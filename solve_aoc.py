@@ -10,14 +10,14 @@ app = typer.Typer()
 
 
 def fetch_problem(url: str) -> str:
-    typer.echo(f"Fetching content from {url} ...", nl=False)
+    typer.echo(f"Fetching content from {url} ... ", nl=False)
     response = httpx.get(url)
     typer.echo(response.status_code)
     return response.text
 
 
 def generate_solution(content: str, api_key: str):
-    typer.echo("Generating solution...")
+    typer.echo("Generating solution... ")
     client = anthropic.Anthropic(api_key=api_key)
     message = client.messages.create(
         model="claude-3-5-sonnet-20241022",
@@ -55,7 +55,7 @@ def save(script_path: Path, script: str):
 def download_input(problem_url: str, input_path: Path, session_token: str):
     input_url = furl(problem_url) / "input"
     typer.echo(
-        f"Downloading input from {input_url} and saving to {input_path} ...", nl=False
+        f"Downloading input from {input_url} and saving to {input_path} ... ", nl=False
     )
     response = httpx.get(input_url.url, cookies={"session": session_token})
     typer.echo(response.status_code)
@@ -65,7 +65,7 @@ def download_input(problem_url: str, input_path: Path, session_token: str):
 
 
 def execute(python_path: Path, script_path: Path, *args) -> str:
-    typer.echo(f"Executing {script_path} ...", nl=False)
+    typer.echo(f"Executing {script_path} ... ", nl=False)
     result = subprocess.run(
         [python_path, script_path, *args], capture_output=True, text=True
     )
@@ -83,7 +83,7 @@ def parse_url(url: str) -> tuple[int, int]:
 
 
 def submit_solution(aoc_url: str, aoc_session_token: str, solution: str, level: int):
-    typer.echo(f"Submitting solution to {aoc_url} ...", nl=False)
+    typer.echo(f"Submitting solution to {aoc_url} ... ", nl=False)
     parsed_url = furl(aoc_url)
     answer_url = parsed_url / "answer"
     response = httpx.post(
