@@ -4,7 +4,6 @@ from pathlib import Path
 import anthropic
 import httpx
 import typer
-from anthropic.types import Message
 from furl import furl
 
 app = typer.Typer()
@@ -17,7 +16,7 @@ def fetch_problem(url: str) -> str:
     return response.text
 
 
-def submit(content: str, api_key: str):
+def generate_solution(content: str, api_key: str):
     typer.echo("Generating solution...")
     client = anthropic.Anthropic(api_key=api_key)
     message = client.messages.create(
@@ -43,14 +42,14 @@ def submit(content: str, api_key: str):
             {"role": "user", "content": [{"type": "text", "text": content}]},
         ],
     )
-    return message
+    return message.content[0].text
 
 
-def save(script_path: Path, result: Message):
+def save(script_path: Path, script: str):
     typer.echo(f"Saving script to: {script_path}")
     script_path.parent.mkdir(parents=True, exist_ok=True)
     with open(script_path, "w") as f:
-        f.write(result.content[0].text)
+        f.write(script)
 
 
 def download_input(problem_url: str, input_path: Path, session_token: str):
@@ -104,10 +103,10 @@ def main(
     aoc_session_token: str,
 ):
     content = fetch_problem(url)
-    result = submit(content, api_key)
+    solution_script = generate_solution(content, api_key)
     year, day = parse_url(url)
     script_path = aoc_project_path / str(year) / f"day{day:02d}.py"
-    save(script_path, result)
+    save(script_path, solution_script)
     input_path = aoc_project_path / str(year) / f"day{day:02d}.txt"
     download_input(url, input_path, aoc_session_token)
     solution = execute(python_path, script_path, input_path)
