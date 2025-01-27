@@ -1,8 +1,11 @@
 import subprocess
+from pathlib import Path
 
 import anthropic
-import typer
 import httpx
+import typer
+from anthropic.types import Message
+from furl import furl
 
 app = typer.Typer()
 
@@ -21,14 +24,14 @@ def submit(content: str, api_key: str):
         model="claude-3-5-sonnet-20241022",
         max_tokens=1000,
         temperature=0,
-        system="You are an expert software engineer. Respond only with code without markdown formatting.",
+        system="You are an expert software engineer. Respond only with code without markdown formatting. Do not include any comments.",
         messages=[
             {
                 "role": "user",
                 "content": [
                     {
                         "type": "text",
-                        "text": "Write python code to solve the following problem",
+                        "text": "Write python code to solve the following problem.",
                     }
                 ],
             },
@@ -38,21 +41,31 @@ def submit(content: str, api_key: str):
     return message
 
 
-def save(filename, result):
-    with open(filename, "w") as f:
+def save(script_path: Path, result: Message):
+    script_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(script_path, "w") as f:
         f.write(result.content[0].text)
 
 
-def execute(python_path, script, *args):
-    subprocess.run([python_path, script, *args])
+def execute(python_path: Path, script_path: Path, *args):
+    subprocess.run([python_path, script_path, *args])
+
+
+def parse_url(url: str) -> tuple[int, int]:
+    parsed_url = furl(url)
+    year = parsed_url.path.segments[0]
+    day = parsed_url.path.segments[2]
+    return int(year), int(day)
 
 
 @app.command()
-def main(url: str, api_key: str, python_path: str):
+def main(url: str, api_key: str, python_path: Path, aoc_project_path: Path):
     content = fetch_url(url)
     result = submit(content, api_key)
-    save("aoc.py", result)
-    execute(python_path, "aoc.py")
+    year, day = parse_url(url)
+    script_path = aoc_project_path / str(year) / f"day{day:02d}.py"
+    save(script_path, result)
+    execute(python_path, script_path)
 
 
 if __name__ == "__main__":
