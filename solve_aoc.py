@@ -33,8 +33,9 @@ def submit(content: str, api_key: str):
                         "type": "text",
                         "text": """
                             Write python code to solve the following problem. Use typer to take a filename as a
-                            command-line argument. Include tests in the code. If the tests pass print out only the
-                            solution using the given file as input. If the tests fail, return an exit code of 1.
+                            command-line argument. Include appropriate tests in the code. If the tests pass print out 
+                            only the solution using the given file as input. If the tests fail, print a message and 
+                            return an exit code of 1. Also print a message in the event of any error.
                         """,
                     }
                 ],
