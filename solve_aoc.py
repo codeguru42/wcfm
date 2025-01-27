@@ -11,14 +11,14 @@ app = typer.Typer()
 
 
 def fetch_problem(url: str) -> str:
+    typer.echo(f"Fetching content from URL: {url}")
     response = httpx.get(url)
-    typer.echo(f"Status Code for URL: {response.status_code}")
-    content = response.text
-    typer.echo(f"Content from URL: {content[:200]}...")
-    return content
+    typer.echo(f"Status Code: {response.status_code}")
+    return response.text
 
 
 def submit(content: str, api_key: str):
+    typer.echo("Generating solution...")
     client = anthropic.Anthropic(api_key=api_key)
     message = client.messages.create(
         model="claude-3-5-sonnet-20241022",
@@ -47,6 +47,7 @@ def submit(content: str, api_key: str):
 
 
 def save(script_path: Path, result: Message):
+    typer.echo(f"Saving script to: {script_path}")
     script_path.parent.mkdir(parents=True, exist_ok=True)
     with open(script_path, "w") as f:
         f.write(result.content[0].text)
@@ -54,16 +55,20 @@ def save(script_path: Path, result: Message):
 
 def download_input(problem_url: str, input_path: Path, session_token: str):
     input_url = furl(problem_url) / "input"
+    typer.echo(f"Downloading input from {input_url} and saving to {input_path}")
     response = httpx.get(input_url.url, cookies={"session": session_token})
+    typer.echo(f"Status Code: {response.status_code}")
     input_path.parent.mkdir(parents=True, exist_ok=True)
     with open(input_path, "w") as f:
         f.write(response.text)
 
 
 def execute(python_path: Path, script_path: Path, *args) -> str:
+    typer.echo(f"Executing script: {script_path}")
     result = subprocess.run(
         [python_path, script_path, *args], capture_output=True, text=True
     )
+    typer.echo(f"Exit code: {result.returncode}")
     return result.stdout
 
 
@@ -75,13 +80,15 @@ def parse_url(url: str) -> tuple[int, int]:
 
 
 def submit_solution(aoc_url: str, aoc_session_token: str, solution: str, level: int):
+    typer.echo(f"Submitting solution to {aoc_url}")
     parsed_url = furl(aoc_url)
     answer_url = parsed_url / "answer"
-    return httpx.post(
+    response = httpx.post(
         answer_url.url,
         data={"level": level, "answer": solution},
         cookies={"session": aoc_session_token},
     )
+    typer.echo(f"Status Code for answer: {response.status_code}")
 
 
 @app.command()
@@ -101,9 +108,7 @@ def main(
     download_input(url, input_path, aoc_session_token)
     solution = execute(python_path, script_path, input_path)
     typer.echo(f"Solution: {solution}")
-    result = submit_solution(url, aoc_session_token, solution, 1)
-    typer.echo(f"Status Code for answer: {result.status_code}")
-    typer.echo(result.text)
+    submit_solution(url, aoc_session_token, solution, 1)
 
 
 if __name__ == "__main__":
