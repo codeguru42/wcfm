@@ -11,9 +11,9 @@ app = typer.Typer()
 
 
 def fetch_problem(url: str) -> str:
-    typer.echo(f"Fetching content from URL: {url}")
+    typer.echo(f"Fetching content from {url}...", nl=False)
     response = httpx.get(url)
-    typer.echo(f"Status Code: {response.status_code}")
+    typer.echo(response.status_code)
     return response.text
 
 
@@ -64,11 +64,11 @@ def download_input(problem_url: str, input_path: Path, session_token: str):
 
 
 def execute(python_path: Path, script_path: Path, *args) -> str:
-    typer.echo(f"Executing script: {script_path}")
+    typer.echo(f"Executing {script_path}...", nl=False)
     result = subprocess.run(
         [python_path, script_path, *args], capture_output=True, text=True
     )
-    typer.echo(f"Exit code: {result.returncode}")
+    typer.echo(result.returncode)
     return result.stdout
 
 
@@ -80,7 +80,7 @@ def parse_url(url: str) -> tuple[int, int]:
 
 
 def submit_solution(aoc_url: str, aoc_session_token: str, solution: str, level: int):
-    typer.echo(f"Submitting solution to {aoc_url}")
+    typer.echo(f"Submitting solution to {aoc_url}...", nl=False)
     parsed_url = furl(aoc_url)
     answer_url = parsed_url / "answer"
     response = httpx.post(
@@ -88,7 +88,7 @@ def submit_solution(aoc_url: str, aoc_session_token: str, solution: str, level: 
         data={"level": level, "answer": solution},
         cookies={"session": aoc_session_token},
     )
-    typer.echo(f"Status Code for answer: {response.status_code}")
+    typer.echo(response.status_code)
 
 
 @app.command()
