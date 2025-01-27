@@ -30,7 +30,6 @@ class SolutionGenerator:
 
     def __init__(self, api_key: str):
         self.client = anthropic.Anthropic(api_key=api_key)
-        self.part1_content = None
 
     def generate_solution(self, problem_description: str, problem_level: int):
         typer.echo("Generating solution... ")
@@ -41,7 +40,7 @@ class SolutionGenerator:
                     "content": [
                         {
                             "type": "text",
-                            "text": "Now write python code to only solve Part 2.",
+                            "text": "Now write python code to solve Part 2.",
                         },
                     ],
                 }
@@ -59,8 +58,8 @@ class SolutionGenerator:
             system="You are an expert software engineer. Respond only with code without markdown formatting. Do not include any comments. Do not generate code to print any output unless directed.",
             messages=self.messages,
         )
-        self.part1_content = message.content[0]
-        return self.part1_content.text
+        self.messages.append({"role": "assistant", "content": [{"type": "text", "text": message.content[0].text}]})
+        return message.content[0].text
 
 
 def fetch_problem(url: str) -> str:
