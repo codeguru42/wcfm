@@ -5,7 +5,6 @@ import anthropic
 import httpx
 import typer
 from furl import furl
-from pyexpat.errors import messages
 
 app = typer.Typer()
 
@@ -33,8 +32,20 @@ class SolutionGenerator:
         self.client = anthropic.Anthropic(api_key=api_key)
         self.part1_content = None
 
-    def generate_solution_part_1(self, problem_description: str):
-        typer.echo("Generating solution for Part 1... ")
+    def generate_solution(self, problem_description: str, problem_level: int):
+        typer.echo("Generating solution... ")
+        if problem_level == 2:
+            self.messages.append(
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "Now write python code to only solve Part 2.",
+                        },
+                    ],
+                }
+            )
         self.messages.append(
             {
                 "role": "user",
@@ -45,28 +56,7 @@ class SolutionGenerator:
             model="claude-3-5-sonnet-20241022",
             max_tokens=1000,
             temperature=0,
-            system="You are an expert software engineer. Respond only with code without markdown formatting. Do not include any comments.",
-            messages=self.messages,
-        )
-        self.part1_content = message.content[0]
-        return self.part1_content.text
-
-    def generate_solution_part_2(self, problem_description: str):
-        typer.echo("Generating solution for Part 2... ")
-        self.messages.append(
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": "Now write python code to solve Part 2."},
-                    {"type": "text", "text": problem_description},
-                ],
-            }
-        )
-        message = self.client.messages.create(
-            model="claude-3-5-sonnet-20241022",
-            max_tokens=1000,
-            temperature=0,
-            system="You are an expert software engineer. Respond only with code without markdown formatting. Do not include any comments.",
+            system="You are an expert software engineer. Respond only with code without markdown formatting. Do not include any comments. Do not generate code to print any output unless directed.",
             messages=self.messages,
         )
         self.part1_content = message.content[0]
@@ -129,6 +119,26 @@ def submit_solution(aoc_url: str, aoc_session_token: str, solution: str, level: 
     typer.echo(response.status_code)
 
 
+def solve(
+    generator: SolutionGenerator,
+    problem_url: str,
+    python_path: Path,
+    aoc_project_path: Path,
+    aoc_session_token: str,
+    input_path: Path,
+    year: int,
+    day: int,
+    problem_level: int,
+):
+    problem_description = fetch_problem(problem_url)
+    solution_script = generator.generate_solution(problem_description, problem_level)
+    script_path = aoc_project_path / str(year) / f"day{day:02d}_part{problem_level}.py"
+    save(script_path, solution_script)
+    solution = execute(python_path, script_path, input_path)
+    typer.echo(f"Solution to Part {problem_level}: {solution}")
+    submit_solution(problem_url, aoc_session_token, solution, problem_level)
+
+
 @app.command()
 def main(
     problem_url: str,
@@ -140,24 +150,30 @@ def main(
     year, day = parse_url(problem_url)
     input_path = aoc_project_path / str(year) / f"day{day:02d}.txt"
     download_input(problem_url, input_path, aoc_session_token)
-
-    problem_description = fetch_problem(problem_url)
     generator = SolutionGenerator(api_key)
-    solution_script = generator.generate_solution_part_1(problem_description)
-    script_path = aoc_project_path / str(year) / f"day{day:02d}_part1.py"
-    save(script_path, solution_script)
-    solution = execute(python_path, script_path, input_path)
-    typer.echo(f"Solution to Part 1: {solution}")
-    submit_solution(problem_url, aoc_session_token, solution, 1)
 
-    problem_description = fetch_problem(problem_url)
-    generator = SolutionGenerator(api_key)
-    solution_script = generator.generate_solution_part_2(problem_description)
-    script_path = aoc_project_path / str(year) / f"day{day:02d}_part2.py"
-    save(script_path, solution_script)
-    solution = execute(python_path, script_path, input_path)
-    typer.echo(f"Solution to Part 2: {solution}")
-    submit_solution(problem_url, aoc_session_token, solution, 2)
+    solve(
+        generator,
+        problem_url,
+        python_path,
+        aoc_project_path,
+        aoc_session_token,
+        input_path,
+        year,
+        day,
+        1,
+    )
+    solve(
+        generator,
+        problem_url,
+        python_path,
+        aoc_project_path,
+        aoc_session_token,
+        input_path,
+        year,
+        day,
+        2,
+    )
 
 
 if __name__ == "__main__":
