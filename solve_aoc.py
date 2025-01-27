@@ -5,8 +5,72 @@ import anthropic
 import httpx
 import typer
 from furl import furl
+from pyexpat.errors import messages
 
 app = typer.Typer()
+
+
+class SolutionGenerator:
+    initial_prompt = """
+        Write python code to solve the following problem. Use typer to take a filename as a
+        command-line argument. Include appropriate tests in the code. If the tests pass print out 
+        only the solution using the given file as input. If the tests fail, print a message and 
+        return an exit code of 1. Also print a message in the event of any error.
+    """
+    messages: list = [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": initial_prompt,
+                }
+            ],
+        }
+    ]
+
+    def __init__(self, api_key: str):
+        self.client = anthropic.Anthropic(api_key=api_key)
+        self.part1_content = None
+
+    def generate_solution_part_1(self, problem_description: str):
+        typer.echo("Generating solution for Part 1... ")
+        self.messages.append(
+            {
+                "role": "user",
+                "content": [{"type": "text", "text": problem_description}],
+            }
+        )
+        message = self.client.messages.create(
+            model="claude-3-5-sonnet-20241022",
+            max_tokens=1000,
+            temperature=0,
+            system="You are an expert software engineer. Respond only with code without markdown formatting. Do not include any comments.",
+            messages=self.messages,
+        )
+        self.part1_content = message.content[0]
+        return self.part1_content.text
+
+    def generate_solution_part_2(self, problem_description: str):
+        typer.echo("Generating solution for Part 2... ")
+        self.messages.append(
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "Now write python code to solve Part 2."},
+                    {"type": "text", "text": problem_description},
+                ],
+            }
+        )
+        message = self.client.messages.create(
+            model="claude-3-5-sonnet-20241022",
+            max_tokens=1000,
+            temperature=0,
+            system="You are an expert software engineer. Respond only with code without markdown formatting. Do not include any comments.",
+            messages=self.messages,
+        )
+        self.part1_content = message.content[0]
+        return self.part1_content.text
 
 
 def fetch_problem(url: str) -> str:
@@ -14,35 +78,6 @@ def fetch_problem(url: str) -> str:
     response = httpx.get(url)
     typer.echo(response.status_code)
     return response.text
-
-
-def generate_solution(content: str, api_key: str):
-    typer.echo("Generating solution... ")
-    client = anthropic.Anthropic(api_key=api_key)
-    message = client.messages.create(
-        model="claude-3-5-sonnet-20241022",
-        max_tokens=1000,
-        temperature=0,
-        system="You are an expert software engineer. Respond only with code without markdown formatting. Do not include any comments.",
-        messages=[
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": """
-                            Write python code to solve the following problem. Use typer to take a filename as a
-                            command-line argument. Include appropriate tests in the code. If the tests pass print out 
-                            only the solution using the given file as input. If the tests fail, print a message and 
-                            return an exit code of 1. Also print a message in the event of any error.
-                        """,
-                    }
-                ],
-            },
-            {"role": "user", "content": [{"type": "text", "text": content}]},
-        ],
-    )
-    return message.content[0].text
 
 
 def save(script_path: Path, script: str):
@@ -96,22 +131,33 @@ def submit_solution(aoc_url: str, aoc_session_token: str, solution: str, level: 
 
 @app.command()
 def main(
-    url: str,
+    problem_url: str,
     api_key: str,
     python_path: Path,
     aoc_project_path: Path,
     aoc_session_token: str,
 ):
-    content = fetch_problem(url)
-    solution_script = generate_solution(content, api_key)
-    year, day = parse_url(url)
-    script_path = aoc_project_path / str(year) / f"day{day:02d}.py"
-    save(script_path, solution_script)
+    year, day = parse_url(problem_url)
     input_path = aoc_project_path / str(year) / f"day{day:02d}.txt"
-    download_input(url, input_path, aoc_session_token)
+    download_input(problem_url, input_path, aoc_session_token)
+
+    problem_description = fetch_problem(problem_url)
+    generator = SolutionGenerator(api_key)
+    solution_script = generator.generate_solution_part_1(problem_description)
+    script_path = aoc_project_path / str(year) / f"day{day:02d}_part1.py"
+    save(script_path, solution_script)
     solution = execute(python_path, script_path, input_path)
-    typer.echo(f"Solution: {solution}")
-    submit_solution(url, aoc_session_token, solution, 1)
+    typer.echo(f"Solution to Part 1: {solution}")
+    submit_solution(problem_url, aoc_session_token, solution, 1)
+
+    problem_description = fetch_problem(problem_url)
+    generator = SolutionGenerator(api_key)
+    solution_script = generator.generate_solution_part_2(problem_description)
+    script_path = aoc_project_path / str(year) / f"day{day:02d}_part2.py"
+    save(script_path, solution_script)
+    solution = execute(python_path, script_path, input_path)
+    typer.echo(f"Solution to Part 2: {solution}")
+    submit_solution(problem_url, aoc_session_token, solution, 2)
 
 
 if __name__ == "__main__":
