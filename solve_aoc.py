@@ -181,7 +181,6 @@ def solve(
 
 @app.command()
 def main(
-    problem_url: str,
     api_key: str,
     python_path: Path,
     aoc_project_path: Path,
