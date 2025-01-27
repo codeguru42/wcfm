@@ -59,9 +59,9 @@ def download_input(problem_url: str, input_path: Path, session_token: str):
         f.write(response.text)
 
 
-def execute(python_path: Path, script_path: Path, *args):
-    subprocess.run([python_path, script_path, *args])
-
+def execute(python_path: Path, script_path: Path, *args) -> str:
+    result = subprocess.run([python_path, script_path, *args], capture_output=True, text=True)
+    return result.stdout
 
 def parse_url(url: str) -> tuple[int, int]:
     parsed_url = furl(url)
@@ -79,7 +79,8 @@ def main(url: str, api_key: str, python_path: Path, aoc_project_path: Path, aoc_
     save(script_path, result)
     input_path = aoc_project_path / str(year) / f"day{day:02d}.txt"
     download_input(url, input_path, aoc_session_token)
-    execute(python_path, script_path, input_path)
+    solution = execute(python_path, script_path, input_path)
+    print(f"Solution: {solution}")
 
 
 if __name__ == "__main__":
