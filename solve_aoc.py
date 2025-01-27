@@ -69,6 +69,11 @@ def parse_url(url: str) -> tuple[int, int]:
     day = parsed_url.path.segments[2]
     return int(year), int(day)
 
+def submit_solution(aoc_url: str, aoc_session_token: str, solution: str, level: int):
+    parsed_url = furl(aoc_url)
+    answer_url = parsed_url / "answer"
+    return httpx.post(answer_url.url, data={"level": level, "answer": solution}, cookies={"session": aoc_session_token})
+
 
 @app.command()
 def main(url: str, api_key: str, python_path: Path, aoc_project_path: Path, aoc_session_token: str):
@@ -81,6 +86,9 @@ def main(url: str, api_key: str, python_path: Path, aoc_project_path: Path, aoc_
     download_input(url, input_path, aoc_session_token)
     solution = execute(python_path, script_path, input_path)
     print(f"Solution: {solution}")
+    result = submit_solution(url, aoc_session_token, solution, 1)
+    print(f"Status Code for answer: {result.status_code}")
+    print(result.text)
 
 
 if __name__ == "__main__":
