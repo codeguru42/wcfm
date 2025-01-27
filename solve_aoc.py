@@ -100,10 +100,10 @@ def main(
     input_path = aoc_project_path / str(year) / f"day{day:02d}.txt"
     download_input(url, input_path, aoc_session_token)
     solution = execute(python_path, script_path, input_path)
-    print(f"Solution: {solution}")
+    typer.echo(f"Solution: {solution}")
     result = submit_solution(url, aoc_session_token, solution, 1)
-    print(f"Status Code for answer: {result.status_code}")
-    print(result.text)
+    typer.echo(f"Status Code for answer: {result.status_code}")
+    typer.echo(result.text)
 
 
 if __name__ == "__main__":
