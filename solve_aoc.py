@@ -69,6 +69,8 @@ def execute(python_path: Path, script_path: Path, *args) -> str:
         [python_path, script_path, *args], capture_output=True, text=True
     )
     typer.echo(result.returncode)
+    if result.returncode != 0:
+        typer.echo(result.stderr)
     return result.stdout
 
 
