@@ -1,5 +1,6 @@
 import subprocess
 from pathlib import Path
+from time import sleep
 
 import anthropic
 import httpx
@@ -177,6 +178,7 @@ def solve(
         day,
         2,
     )
+    sleep(8.0)
 
 
 @app.command()
