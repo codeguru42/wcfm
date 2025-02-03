@@ -1,6 +1,7 @@
 import subprocess
 from pathlib import Path
 from time import sleep
+from typing import Iterable
 
 import anthropic
 import httpx
@@ -32,7 +33,7 @@ class SolutionGenerator:
     def __init__(self, api_key: str):
         self.client = anthropic.Anthropic(api_key=api_key)
 
-    def generate_solution(self, problem_description: str, problem_level: int):
+    def generate_solution(self, problem_description: str, problem_level: int) -> Iterable[str]:
         typer.echo("Generating solution... ")
         if problem_level == 2:
             self.messages.append(
@@ -59,13 +60,15 @@ class SolutionGenerator:
             system="You are an expert software engineer. Respond only with code without markdown formatting. Do not include any comments. Do not generate code to print any output unless directed.",
             messages=self.messages,
         )
+        typer.echo(f"Getting content chunks from response: {len(message.content)}")
+        reply = [c.text for c in message.content if c.type == "text"]
         self.messages.append(
             {
                 "role": "assistant",
-                "content": [{"type": "text", "text": message.content[0].text}],
+                "content": [{"type": "text", "text": text} for text in reply],
             }
         )
-        return message.content[0].text
+        return reply
 
 
 def fetch_problem(problem_url: furl) -> str:
@@ -75,11 +78,12 @@ def fetch_problem(problem_url: furl) -> str:
     return response.text
 
 
-def save(script_path: Path, script: str):
+def save(script_path: Path, script: Iterable[str]):
     typer.echo(f"Saving script to: {script_path}")
     script_path.parent.mkdir(parents=True, exist_ok=True)
     with open(script_path, "w") as f:
-        f.write(script)
+        for part in script:
+            f.write(part)
 
 
 def download_input(problem_url: furl, input_path: Path, session_token: str):
@@ -112,10 +116,9 @@ def parse_url(url: str) -> tuple[int, int]:
     return int(year), int(day)
 
 
-def submit_solution(aoc_url: str, aoc_session_token: str, solution: str, level: int):
+def submit_solution(aoc_url: furl, aoc_session_token: str, solution: str, level: int):
     typer.echo(f"Submitting solution to {aoc_url} ... ", nl=False)
-    parsed_url = furl(aoc_url)
-    answer_url = parsed_url / "answer"
+    answer_url = aoc_url / "answer"
     response = httpx.post(
         answer_url.url,
         data={"level": level, "answer": solution},
@@ -126,7 +129,7 @@ def submit_solution(aoc_url: str, aoc_session_token: str, solution: str, level: 
 
 def solve_part(
     generator: SolutionGenerator,
-    problem_url: str,
+    problem_url: furl,
     python_path: Path,
     aoc_project_path: Path,
     aoc_session_token: str,
